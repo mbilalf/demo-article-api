@@ -1,10 +1,12 @@
 # DEMO Article Restful JSON API
-A GO implementation
+A GO implementation.
 
 ## Running 
 ```sh
 go run *.go
 ```
+
+Server runs at localhost:8000
 
 ## Endpoints
 
