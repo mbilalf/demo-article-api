@@ -29,6 +29,7 @@ Sample Request Body:
 
 ### Search Articles
 GET /api/v1/tags/{tag}/{date}
+
 e.g. localhost:8000/api/v1/tags/health/2018-08-12
 
 Response:
