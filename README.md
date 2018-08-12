@@ -3,7 +3,6 @@ A GO implementation
 
 ## Running 
 ```sh
-# Run example 1
 go run *.go
 ```
 
