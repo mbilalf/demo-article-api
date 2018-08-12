@@ -9,14 +9,15 @@ go run *.go
 
 ## Endpoints
 
-### Get AllArticles
+### Get All Articles
 GET /api/v1/articles
 
 ### Get Article by Id
 GET /api/v1/articles/{id}
 
-### POST Articles
+### Add new Articles
 POST /api/v1/articles
+
 Sample Request Body:
 ```
 {
@@ -27,8 +28,8 @@ Sample Request Body:
 }
 ```
 
-### GET Search Articles
-GET /api/v1/tags/{tag}/{dae}
+### Search Articles
+GET /api/v1/tags/{tag}/{date}
 e.g. localhost:8000/api/v1/tags/health/2018-08-12
 
 Response:
