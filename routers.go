@@ -15,6 +15,12 @@ var BaseUrl = "/api/v1/"
 
 var routes = Routes{
 	Route{
+		"SetupDatabase",
+		"GET",
+		"setup",
+		SetupDb,
+	},
+	Route{
 		"GetAllArticles",
 		"GET",
 		"articles",

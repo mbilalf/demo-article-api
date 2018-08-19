@@ -2,23 +2,29 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/mbilalf/demo-article-api/model"
+	"github.com/mbilalf/demo-article-api/repository"
 	"github.com/mbilalf/demo-article-api/service"
 )
 
-type SearchResult struct {
-	Tag         string   `json: "tag"`
-	Count       int      `json: "count"`
-	Articles    []string `json: "articles"`
-	RelatedTags []string `json: "related_tags"`
-}
+// type SearchResult struct {
+// 	Tag         string   `json: "tag"`
+// 	Count       int      `json: "count"`
+// 	Articles    []string `json: "articles"`
+// 	RelatedTags []string `json: "related_tags"`
+// }
 
 var DateFormat = "2006-01-02"
+
+func SetupDb(w http.ResponseWriter, r *http.Request) {
+	service.SetupDatabase()
+}
 
 func SaveArticles(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -26,7 +32,10 @@ func SaveArticles(w http.ResponseWriter, r *http.Request) {
 	//TODO figure out how to set date format while Decoding request
 	_ = json.NewDecoder(r.Body).Decode(&article)
 
-	service.SaveArticle(&article)
+	_, err := service.SaveArticle(&article)
+	if err != nil {
+		log.Panic("Unable to Save Article. Error: ", err)
+	}
 	if err := json.NewEncoder(w).Encode(article); err != nil {
 		panic(err)
 	}
@@ -34,6 +43,12 @@ func SaveArticles(w http.ResponseWriter, r *http.Request) {
 
 // GetAllArticles ...
 func GetAllArticles(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Println("+++ Making db call")
+	db, _ := repository.NewDB()
+	dbArticles, err := repository.FetchAllArticles(db)
+	fmt.Println("?? ", err)
+	fmt.Println("+++++++", dbArticles)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
@@ -68,30 +83,32 @@ func GetArticle(w http.ResponseWriter, r *http.Request) {
 
 // SearchByTag ...
 func SearchByTag(w http.ResponseWriter, r *http.Request) {
+
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	tagName := params["tagName"]
 	checkDate, _ := time.Parse(DateFormat, params["date"])
 
-	result := SearchResult{Tag: tagName}
-	//map to store tags. Map keys will server as a set of tags on all matched articles
-	tagMap := make(map[string]bool)
+	// result := service.SearchResult{Tag: tagName}
+	// //map to store tags. Map keys will server as a set of tags on all matched articles
+	// tagMap := make(map[string]bool)
 
-	// get search result from service and transform as per requirements
-	articles, _ := service.SearchArticleByTagAndDate(tagName, checkDate)
-	for _, item := range *articles {
-		result.Count++
-		result.Articles = append(result.Articles, item.Id)
-		for _, t := range item.Tags {
-			if t != tagName {
-				tagMap[t] = true
-			}
-		}
-	}
-	//add all Map keys to RelatedTags list
-	for k := range tagMap {
-		result.RelatedTags = append(result.RelatedTags, k)
-	}
+	// // get search result from service and transform as per requirements
+	// articles, _ := service.SearchArticleByTagAndDate(tagName, checkDate)
+	// for _, item := range *articles {
+	// 	result.Count++
+	// 	result.Articles = append(result.Articles, item.Id)
+	// 	for _, t := range item.Tags {
+	// 		if t != tagName {
+	// 			tagMap[t] = true
+	// 		}
+	// 	}
+	// }
+	// //add all Map keys to RelatedTags list
+	// for k := range tagMap {
+	// 	result.RelatedTags = append(result.RelatedTags, k)
+	// }
+	result := service.SearchArticlesFromDB(tagName, checkDate)
 	if err := json.NewEncoder(w).Encode(result); err != nil {
 		panic(err)
 	}
