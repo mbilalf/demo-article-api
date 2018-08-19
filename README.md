@@ -2,6 +2,14 @@
 A GO implementation.
 
 ## Running 
+To Setup Mysql run following docker commands. 
+
+```
+docker image pull mysql:5.7
+docker container run -d -p 3306:3306 --name=mysql_local -e MYSQL_ROOT_PASSWORD=fidodido -e MYSQL_DATABASE=demo_db mysql:5.7
+```
+
+Run API Service
 ```sh
 go run *.go
 ```
