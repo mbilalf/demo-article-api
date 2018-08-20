@@ -6,8 +6,6 @@ import (
 	"log"
 	"strings"
 	"time"
-
-	"github.com/mbilalf/demo-article-api/model"
 )
 
 var dateFormat = "2006-01-02"
@@ -55,7 +53,6 @@ func CreateArticle(db *sql.DB, title string, body string) (int64, error) {
 
 //CreateArticleTag ...
 func CreateArticleTag(db *sql.DB, articleID int64, tagID int64) (bool, error) {
-	fmt.Println("~~~~~ CreateArticleTag ", articleID, "---", tagID)
 	var sql = `INSERT INTO tbl_article_tag(article_id, tag_id) VALUES (?, ?)`
 	_, err := db.Exec(sql, articleID, tagID)
 	if err != nil {
@@ -66,15 +63,15 @@ func CreateArticleTag(db *sql.DB, articleID int64, tagID int64) (bool, error) {
 }
 
 // CreateArticleWithTags ...
-func CreateArticleWithTags(db *sql.DB, title string, body string, tags *[]string) (bool, error) {
+func CreateArticleWithTags(db *sql.DB, title string, body string, tags *[]string) (int64, error) {
 	//TODO handle duplicate tag
 	artID, err := CreateArticle(db, title, body)
 	if err != nil {
-		return false, err
+		return -1, err
 	}
 	existingTags, err := FetchTagsByName(db, tags)
 	if err != nil {
-		return false, err
+		return -1, err
 	}
 	var tagIDs []int64
 	tagMap := make(map[string]*TagEntity)
@@ -86,20 +83,19 @@ func CreateArticleWithTags(db *sql.DB, title string, body string, tags *[]string
 		if _, ok := tagMap[t]; !ok {
 			tagID, err := CreateTag(db, t)
 			if err != nil {
-				return false, err
+				return -1, err
 			}
 			tagIDs = append(tagIDs, tagID)
 		}
 	}
 
 	for _, tagID := range tagIDs {
-		fmt.Println("~~  tagids: ", tagID)
 		_, err := CreateArticleTag(db, artID, tagID)
 		if err != nil {
-			return false, err
+			return -1, err
 		}
 	}
-	return true, nil
+	return artID, nil
 }
 
 // FetchTagsByName ...
@@ -128,7 +124,7 @@ func FetchTagsByName(db *sql.DB, tags *[]string) (*[]TagEntity, error) {
 }
 
 // FetchAllArticles ...
-func FetchAllArticles(db *sql.DB) ([]*model.Article, error) {
+func FetchAllArticles(db *sql.DB) ([]*ArticleEntity, error) {
 	var searchQuery = "SELECT * from tbl_article"
 	rows, err := db.Query(searchQuery)
 	if err != nil {
@@ -136,14 +132,13 @@ func FetchAllArticles(db *sql.DB) ([]*model.Article, error) {
 	}
 	defer rows.Close()
 
-	articles := make([]*model.Article, 0)
+	articles := make([]*ArticleEntity, 0)
 	for rows.Next() {
-		art := new(model.Article)
-		err := rows.Scan(&art.Id, &art.Title, &art.Body, &art.Date)
+		art := new(ArticleEntity)
+		err := rows.Scan(&art.ID, &art.Title, &art.Body, &art.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println("`````", art)
 		articles = append(articles, art)
 	}
 	if err = rows.Err(); err != nil {

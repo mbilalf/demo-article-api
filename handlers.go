@@ -8,17 +8,9 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/mbilalf/demo-article-api/model"
-	"github.com/mbilalf/demo-article-api/repository"
 	"github.com/mbilalf/demo-article-api/service"
+	"github.com/mbilalf/demo-article-api/view"
 )
-
-// type SearchResult struct {
-// 	Tag         string   `json: "tag"`
-// 	Count       int      `json: "count"`
-// 	Articles    []string `json: "articles"`
-// 	RelatedTags []string `json: "related_tags"`
-// }
 
 var DateFormat = "2006-01-02"
 
@@ -26,29 +18,44 @@ func SetupDb(w http.ResponseWriter, r *http.Request) {
 	service.SetupDatabase()
 }
 
-func SaveArticles(w http.ResponseWriter, r *http.Request) {
+// GetArticle ...
+func GetArticle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var article model.Article
-	//TODO figure out how to set date format while Decoding request
-	_ = json.NewDecoder(r.Body).Decode(&article)
 
-	_, err := service.SaveArticle(&article)
-	if err != nil {
-		log.Panic("Unable to Save Article. Error: ", err)
-	}
-	if err := json.NewEncoder(w).Encode(article); err != nil {
+	w.WriteHeader(http.StatusNotImplemented)
+	errRes := view.ErrorResponse{Code: http.StatusNotImplemented, Message: fmt.Sprintf("Operation not supported")}
+	if err := json.NewEncoder(w).Encode(errRes); err != nil {
 		panic(err)
 	}
+	// TODO add support in repository to enable following code
+	/*
+		params := mux.Vars(r)
+		idStr := params["id"]
+		ID, err := strconv.ParseInt(idStr, 10, 0)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			errRes := view.ErrorResponse{Code: 400, Message: fmt.Sprintf("Invalid value %s. Expected int", idStr)}
+			if err := json.NewEncoder(w).Encode(errRes); err != nil {
+				panic(err)
+			}
+			return
+		}
+		article, serviceErr := service.GetArticle(ID)
+		if serviceErr != nil {
+			log.Println("Failed to get Article from service: ", serviceErr)
+			if err := json.NewEncoder(w).Encode(serviceErr); err != nil {
+				panic(err)
+			}
+		}
+
+		if err := json.NewEncoder(w).Encode(*article); err != nil {
+			panic(err)
+		}
+	*/
 }
 
-// GetAllArticles ...
+// GetAllArticles ... Better implementation would be to paginate instead of fetch all
 func GetAllArticles(w http.ResponseWriter, r *http.Request) {
-
-	fmt.Println("+++ Making db call")
-	db, _ := repository.NewDB()
-	dbArticles, err := repository.FetchAllArticles(db)
-	fmt.Println("?? ", err)
-	fmt.Println("+++++++", dbArticles)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
@@ -64,50 +71,35 @@ func GetAllArticles(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetArticle ...
-func GetArticle(w http.ResponseWriter, r *http.Request) {
+//SaveArticles ...
+func SaveArticles(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	params := mux.Vars(r)
+	var article view.Article
+	//TODO figure out how to set date format while Decoding request
+	_ = json.NewDecoder(r.Body).Decode(&article)
 
-	article, serviceErr := service.GetArticle(params["id"])
-	if serviceErr != nil {
-		log.Println("Failed to get Article from service: ", serviceErr)
-		if err := json.NewEncoder(w).Encode(serviceErr); err != nil {
+	artID, err := service.SaveArticle(&article)
+	if err != nil {
+		errRes := view.ErrorResponse{Code: http.StatusInternalServerError, Message: fmt.Sprintf("Unable to save article")}
+		if err := json.NewEncoder(w).Encode(errRes); err != nil {
 			panic(err)
 		}
+		log.Panic("Unable to Save Article. Error: ", err)
 	}
-	if err := json.NewEncoder(w).Encode(*article); err != nil {
+
+	//TODO return saved article record instead of received request object
+	article.Id = artID
+	if err := json.NewEncoder(w).Encode(article); err != nil {
 		panic(err)
 	}
 }
 
 // SearchByTag ...
 func SearchByTag(w http.ResponseWriter, r *http.Request) {
-
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	tagName := params["tagName"]
 	checkDate, _ := time.Parse(DateFormat, params["date"])
-
-	// result := service.SearchResult{Tag: tagName}
-	// //map to store tags. Map keys will server as a set of tags on all matched articles
-	// tagMap := make(map[string]bool)
-
-	// // get search result from service and transform as per requirements
-	// articles, _ := service.SearchArticleByTagAndDate(tagName, checkDate)
-	// for _, item := range *articles {
-	// 	result.Count++
-	// 	result.Articles = append(result.Articles, item.Id)
-	// 	for _, t := range item.Tags {
-	// 		if t != tagName {
-	// 			tagMap[t] = true
-	// 		}
-	// 	}
-	// }
-	// //add all Map keys to RelatedTags list
-	// for k := range tagMap {
-	// 	result.RelatedTags = append(result.RelatedTags, k)
-	// }
 	result := service.SearchArticlesFromDB(tagName, checkDate)
 	if err := json.NewEncoder(w).Encode(result); err != nil {
 		panic(err)

@@ -12,6 +12,12 @@ type TagEntity struct {
 type ArticleEntity struct {
 	ID        int64     `json: "id"`
 	Title     string    `json: "title"`
-	Body      time.Time `json:"body"`
-	CreatedAt string    `json:"date"`
+	Body      string    `json:"body"`
+	CreatedAt time.Time `json:"date"`
+}
+
+// ArticleTagEntity ...
+type ArticleTagEntity struct {
+	ArticleID int64
+	TagID     string
 }
