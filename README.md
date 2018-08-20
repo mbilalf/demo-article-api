@@ -34,6 +34,7 @@ Server runs at localhost:8000
 
 ### Initlize Database
 GET /api/v1/setup
+
 Setup Database and add dummy data
 
 ### Get All Articles
